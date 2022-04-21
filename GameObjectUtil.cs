@@ -14,6 +14,7 @@ namespace GeoLog
                 ret.Insert(0, $"/{p.gameObject.name}");
                 p = p.parent;
             }
+            ret.Insert(0, self.scene.name);
             return ret.ToString();
         }
     }
