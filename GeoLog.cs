@@ -53,7 +53,7 @@ namespace GeoLog
                 _pdToNameMap.Add(jes.playerDataName, Language.Language.Get(jes.nameConvo, "Journal"));
             }
 
-            Log($"\"Scene and GameObject Path\", \"Name\", \"Small Geo (geo per hit when geo rock)\", \"Medium Geo (hits until final payout when geo rock)\", \"Large Geo (final payout when geo rock)\", \"Total Geo\", \"Total Geo (Greed)\"");
+            Log($"\"Scene and GameObject Path\",\"Name\",\"Small Geo (geo per hit when geo rock)\",\"Medium Geo (hits until final payout when geo rock)\",\"Large Geo (final payout when geo rock)\",\"Total Geo\",\"Total Geo (Greed)\"");
         }
 
         private void OnSceneManagerStart(On.SceneManager.orig_Start orig, SceneManager self)
@@ -101,7 +101,7 @@ namespace GeoLog
                 int lg = self.GetAttr<HealthManager, int>("largeGeoDrops");
                 EnemyDeathEffects ede = self.GetAttr<HealthManager, EnemyDeathEffects>("enemyDeathEffects");
                 string name = ede.GetAttr<EnemyDeathEffects, string>("playerDataName");
-                Log($"\"{self.gameObject.GetGoPath()}\", \"{_pdToNameMap[name]}\", \"{sg}\", \"{mg}\", \"{lg}\", \"{sg + (mg * 5) + (lg * 25)}\", \"{Mathf.CeilToInt(sg * 1.2f) + (Mathf.CeilToInt(mg * 1.2f) * 5) + (Mathf.CeilToInt(lg * 1.2f) * 25)}\"");
+                Log($"\"{self.gameObject.GetGoPath()}\",\"{_pdToNameMap[name]}\",\"{sg}\",\"{mg}\",\"{lg}\",\"{sg + (mg * 5) + (lg * 25)}\",\"{Mathf.CeilToInt(sg * 1.2f) + (Mathf.CeilToInt(mg * 1.2f) * 5) + (Mathf.CeilToInt(lg * 1.2f) * 25)}\"");
                 _doneGos.Add(self.gameObject.GetGoPath());
             }
             catch (Exception )
@@ -124,7 +124,7 @@ namespace GeoLog
                     int gphValue = gphGC.sizes[gphGC.type].value;
                     int gph = tmpV.GetFsmInt("Geo Per Hit").Value * gphValue;
                     int h = tmpV.GetFsmInt("Hits").Value;
-                    Log($"\"{self.gameObject.GetGoPath()}\", \"Geo Rock\", \"{gph}\", \"{h}\", \"{fp}\", \"{(gph * h) + fp}\", \"{(gph * h) + fp}\"");
+                    Log($"\"{self.gameObject.GetGoPath()}\",\"Geo Rock\",\"{gph}\",\"{h}\",\"{fp}\",\"{(gph * h) + fp}\",\"{(gph * h) + fp}\"");
                     _doneGos.Add(self.gameObject.GetGoPath());
                 }
                 else if (self.FsmName.Equals("Shiny Control"))
@@ -155,7 +155,7 @@ namespace GeoLog
                                 name = "Arcane Egg";
                                 break;
                         }
-                        Log($"\"{self.gameObject.GetGoPath()}\", \"{name}\", \"-\", \"-\", \"-\", \"{ret}\", \"{ret}\"");
+                        Log($"\"{self.gameObject.GetGoPath()}\",\"{name}\",\"-\",\"-\",\"-\",\"{ret}\",\"{ret}\"");
                         _doneGos.Add(self.gameObject.GetGoPath());
                     }
                 }
