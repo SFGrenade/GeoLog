@@ -58,7 +58,7 @@ namespace GeoLog
                 Log($"\"{jes.playerDataName}\": \"{jes.nameConvo}\"");
                 _pdToNameMap.Add(jes.playerDataName, Language.Language.Get(jes.nameConvo, "Journal"));
             }
-            
+
             WriteLine($"\"Scene and GameObject Path\",\"Name\",\"Small Geo (geo per hit when geo rock)\",\"Medium Geo (hits until final payout when geo rock)\",\"Large Geo (final payout when geo rock)\",\"Total Geo\",\"Total Geo (Greed)\"");
         }
 
