@@ -13,13 +13,138 @@ namespace GeoLog;
 
 public class GeoLog : Mod
 {
+    public enum GeoSourceType
+    {
+        Enemy,
+        GeoRock,
+        Relic
+    };
+
     internal static GeoLog Instance;
     private readonly string _dir;
     private FileStream _fileStream;
 
+    private void StartCSV()
+    {
+        WriteLine(
+            $"\"Scene\",\"Type\",\"GameObject Path\",\"Name\",\"Total Small Geo\",\"Total Medium Geo\",\"Total Large Geo\",\"Total Geo\",\"Greed Bonus\"");
+    }
+
+    private void LogCSV(GeoSourceType type, GameObject go, string name, string numSmallPieces, string numMediumPieces, string numLargePieces, string totalGeo,
+        string greedBonus)
+    {
+        if (_doneGos.Exists(x => x == go.GetGoPath())) return;
+        (string sceneName, string goPath) = go.GetGoPath();
+        WriteLine(
+            $"\"{sceneName}\",\"{type.ToString()}\",\"{goPath}\",\"{name}\",\"{numSmallPieces}\",\"{numMediumPieces}\",\"{numLargePieces}\",\"{totalGeo}\",\"{greedBonus}\"");
+        _doneGos.Add(go.GetGoPath());
+    }
+
+    private void LogCSV(GeoSourceType type, GameObject go, string name, int numSmallPieces, int numMediumPieces, int numLargePieces, bool canGreed)
+    {
+        string numSmallPiecesStr = "-";
+        if (numSmallPieces != -1)
+            numSmallPiecesStr = $"{numSmallPieces}";
+        string numMediumPiecesStr = "-";
+        if (numMediumPieces != -1)
+            numMediumPiecesStr = $"{numMediumPieces}";
+        string numLargePiecesStr = "-";
+        if (numLargePieces != -1)
+            numLargePiecesStr = $"{numLargePieces}";
+
+        string totalGeoStr = "-";
+        int totalGeo = 0;
+        if (numSmallPieces != -1)
+            totalGeo += numSmallPieces;
+        if (numMediumPieces != -1)
+            totalGeo += numMediumPieces * 5;
+        if (numLargePieces != -1)
+            totalGeo += numLargePieces * 25;
+        totalGeoStr = $"{totalGeo}";
+
+        string greedBonusStr = "-";
+        if (canGreed)
+        {
+            int greedBonus = 0;
+            if (numSmallPieces != -1)
+                greedBonus += Mathf.CeilToInt(numSmallPieces * 0.2f);
+            if (numMediumPieces != -1)
+                greedBonus += Mathf.CeilToInt(numMediumPieces * 0.2f) * 5;
+            if (numLargePieces != -1)
+                greedBonus += Mathf.CeilToInt(numLargePieces * 0.2f) * 25;
+            greedBonusStr = $"{greedBonus}";
+        }
+
+        LogCSV(type, go, name, numSmallPiecesStr, numMediumPiecesStr, numLargePiecesStr, totalGeoStr, greedBonusStr);
+    }
+
+    private void LogCSVEnemy(GameObject go, string name, int numSmallPieces, int numMediumPieces, int numLargePieces)
+    {
+        LogCSV(GeoSourceType.Enemy, go, name, numSmallPieces, numMediumPieces, numLargePieces, true);
+    }
+
+    private void LogCSVGeoRock(GameObject go, string name, GeoControl.Size[] piecesPerHitSizes, int piecesPerHitSize, GeoControl.Size[] finalPayoutSizes,
+        int finalPayoutSize, int geoPerHit, int amountHits, int finalPayout)
+    {
+        int piecesPerHitValue = piecesPerHitSizes[piecesPerHitSize].value;
+        int finalPayoutValue = finalPayoutSizes[finalPayoutSize].value;
+        int totalGeoAmount = ((geoPerHit * piecesPerHitValue) * amountHits) + (finalPayout * finalPayoutValue);
+
+        if (piecesPerHitValue == 1)
+        {
+            if (finalPayoutValue == 1)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"({geoPerHit}*{amountHits})+{finalPayout}", $"-", $"-", $"{totalGeoAmount}", "-");
+            }
+            else if (finalPayoutValue == 5)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"({geoPerHit}*{amountHits})", $"{finalPayout}", $"-", $"{totalGeoAmount}", "-");
+            }
+            else if (finalPayoutValue == 25)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"({geoPerHit}*{amountHits})", $"-", $"{finalPayout}", $"{totalGeoAmount}", "-");
+            }
+        }
+        else if (piecesPerHitValue == 5)
+        {
+            if (finalPayoutValue == 1)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"{finalPayout}", $"({geoPerHit}*{amountHits})", $"-", $"{totalGeoAmount}", "-");
+            }
+            else if (finalPayoutValue == 5)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"-", $"({geoPerHit}*{amountHits})+{finalPayout}", $"-", $"{totalGeoAmount}", "-");
+            }
+            else if (finalPayoutValue == 25)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"-", $"({geoPerHit}*{amountHits})", $"{finalPayout}", $"{totalGeoAmount}", "-");
+            }
+        }
+        else if (piecesPerHitValue == 25)
+        {
+            if (finalPayoutValue == 1)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"{finalPayout}", $"-", $"({geoPerHit}*{amountHits})", $"{totalGeoAmount}", "-");
+            }
+            else if (finalPayoutValue == 5)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"-", $"{finalPayout}", $"({geoPerHit}*{amountHits})", $"{totalGeoAmount}", "-");
+            }
+            else if (finalPayoutValue == 25)
+            {
+                LogCSV(GeoSourceType.GeoRock, go, name, $"-", $"-", $"({geoPerHit}*{amountHits})+{finalPayout}", $"{totalGeoAmount}", "-");
+            }
+        }
+    }
+
+    private void LogCSVRelic(GameObject go, string name, int geoSellAmount)
+    {
+        LogCSV(GeoSourceType.Relic, go, name, "-", "-", "-", $"{geoSellAmount}", "-");
+    }
+
     public override string GetVersion() => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
-    private List<string> _doneGos = new List<string>();
+    private List<(string sceneName, string goPath)> _doneGos = new();
 
     private Dictionary<string, string> _pdToNameMap = new Dictionary<string, string>();
 
@@ -37,15 +162,18 @@ public class GeoLog : Mod
                 case 2:
                     continue;
             }
+
             string scenePath = SceneUtility.GetScenePathByBuildIndex(i);
             dict.Add((Path.GetFileNameWithoutExtension(scenePath), "_SceneManager"));
         }
+
         return dict;
     }
 
     public GeoLog() : base("Geo Log")
     {
-        _dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? throw new DirectoryNotFoundException("I have no idea how you did this, but good luck figuring it out.");
+        _dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ??
+               throw new DirectoryNotFoundException("I have no idea how you did this, but good luck figuring it out.");
         _fileStream = new FileStream(Path.Combine(_dir, "Geo.csv"), FileMode.Create);
 
         On.HealthManager.Start += OnHealthManagerStart;
@@ -59,7 +187,7 @@ public class GeoLog : Mod
             _pdToNameMap.Add(jes.playerDataName, Language.Language.Get(jes.nameConvo, "Journal"));
         }
 
-        WriteLine($"\"Scene and GameObject Path\",\"Name\",\"Small Geo (geo per hit when geo rock)\",\"Medium Geo (hits until final payout when geo rock)\",\"Large Geo (final payout when geo rock)\",\"Total Geo\",\"Total Geo (Greed)\"");
+        StartCSV();
     }
 
     private void OnSceneManagerStart(On.SceneManager.orig_Start orig, SceneManager self)
@@ -91,6 +219,7 @@ public class GeoLog : Mod
         {
             CheckHealthManager(hm);
         }
+
         foreach (var fsm in Resources.FindObjectsOfTypeAll<PlayMakerFSM>())
         {
             CheckFsm(fsm);
@@ -101,16 +230,14 @@ public class GeoLog : Mod
     {
         try
         {
-            if (_doneGos.Exists(x => x == self.gameObject.GetGoPath())) return;
             int sg = self.GetAttr<HealthManager, int>("smallGeoDrops");
             int mg = self.GetAttr<HealthManager, int>("mediumGeoDrops");
             int lg = self.GetAttr<HealthManager, int>("largeGeoDrops");
             EnemyDeathEffects ede = self.GetAttr<HealthManager, EnemyDeathEffects>("enemyDeathEffects");
             string name = ede.GetAttr<EnemyDeathEffects, string>("playerDataName");
-            WriteLine($"\"{self.gameObject.GetGoPath()}\",\"{_pdToNameMap[name]}\",\"{sg}\",\"{mg}\",\"{lg}\",\"{sg + (mg * 5) + (lg * 25)}\",\"{(sg + Mathf.CeilToInt(sg * 0.2f)) + ((mg + Mathf.CeilToInt(mg * 0.2f)) * 5) + ((lg + Mathf.CeilToInt(lg * 0.2f)) * 25)}\"");
-            _doneGos.Add(self.gameObject.GetGoPath());
+            LogCSVEnemy(self.gameObject, _pdToNameMap[name], sg, mg, lg);
         }
-        catch (Exception )
+        catch (Exception)
         {
         }
     }
@@ -121,21 +248,14 @@ public class GeoLog : Mod
         {
             if (self.FsmName.Equals("Geo Rock"))
             {
-                if (_doneGos.Exists(x => x == self.gameObject.GetGoPath())) return;
                 var tmpV = self.FsmVariables;
                 GeoControl fpGC = self.GetAction<FlingObjectsFromGlobalPool>("Destroy", 2).gameObject.Value.GetComponent<GeoControl>();
-                int fpValue = fpGC.sizes[fpGC.type].value;
-                int fp = tmpV.GetFsmInt("Final Payout").Value * fpValue;
                 GeoControl gphGC = self.GetAction<FlingObjectsFromGlobalPool>("Hit", 1).gameObject.Value.GetComponent<GeoControl>();
-                int gphValue = gphGC.sizes[gphGC.type].value;
-                int gph = tmpV.GetFsmInt("Geo Per Hit").Value * gphValue;
-                int h = tmpV.GetFsmInt("Hits").Value;
-                WriteLine($"\"{self.gameObject.GetGoPath()}\",\"Geo Rock\",\"{gph}\",\"{h}\",\"{fp}\",\"{(gph * h) + fp}\",\"{(gph * h) + fp}\"");
-                _doneGos.Add(self.gameObject.GetGoPath());
+                LogCSVGeoRock(self.gameObject, "Geo Rock", gphGC.sizes, gphGC.type, fpGC.sizes, fpGC.type, tmpV.GetFsmInt("Geo Per Hit").Value,
+                    tmpV.GetFsmInt("Hits").Value, tmpV.GetFsmInt("Final Payout").Value);
             }
             else if (self.FsmName.Equals("Shiny Control"))
             {
-                if (_doneGos.Exists(x => x == self.gameObject.GetGoPath())) return;
                 var tmpV = self.FsmVariables;
                 int trinketNum = tmpV.GetFsmInt("Trinket Num").Value;
                 if (trinketNum > 0 && trinketNum < 5)
@@ -161,12 +281,12 @@ public class GeoLog : Mod
                             name = "Arcane Egg";
                             break;
                     }
-                    WriteLine($"\"{self.gameObject.GetGoPath()}\",\"{name}\",\"-\",\"-\",\"-\",\"{ret}\",\"{ret}\"");
-                    _doneGos.Add(self.gameObject.GetGoPath());
+
+                    LogCSVRelic(self.gameObject, name, ret);
                 }
             }
         }
-        catch (Exception )
+        catch (Exception)
         {
         }
     }

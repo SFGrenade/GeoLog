@@ -5,7 +5,7 @@ namespace GeoLog;
 
 public static class GameObjectUtil
 {
-    public static string GetGoPath(this GameObject self)
+    public static (string sceneName, string gameObjectPath) GetGoPath(this GameObject self)
     {
         StringBuilder ret = new StringBuilder();
         Transform p = self.transform;
@@ -14,7 +14,6 @@ public static class GameObjectUtil
             ret.Insert(0, $"/{p.gameObject.name}");
             p = p.parent;
         }
-        ret.Insert(0, self.scene.name);
-        return ret.ToString();
+        return (self.scene.name, ret.ToString());
     }
 }
